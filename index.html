@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>When Fear and Price Agree</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: confident student-finance talk, a trading-desk screen at night
+   IDEA: a market terminal — ticker tape, live-drawn charts, signal lights
+   PICTURE: every chart redrawn from the deck's own data, animating in as each slide lands
+   COLOUR and TYPE: graphite ground; coral = Both UP, teal = Both DOWN, slate = ordinary, gold accent; Sora + Inter
+   LAYOUT: fixed 16:9 stage scaled to the screen, horizontal snap deck, nav dock + speaker notes */
+:root{--bg:#0b0e15;--panel:#131826;--panel2:#1a2133;--line:rgba(255,255,255,.08);--ink:#eef1f8;--mute:#98a2b8;--dim:#5f6880;
+--coral:#ff6f61;--teal:#2fd1bc;--slate:#8a93a8;--gold:#ffb020;--violet:#8b7cf6;--sky:#4fb3e8;color-scheme:dark}
+*{box-sizing:border-box;margin:0;padding:0;min-width:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font:400 18px/1.5 Inter,system-ui,sans-serif;overflow:hidden}
+#bgfx{position:fixed;inset:0;z-index:0;pointer-events:none}
+.gridbg{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse at 50% 40%,#000 20%,transparent 75%);opacity:.45}
+#deck{position:relative;z-index:1;display:flex;height:100vh;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none}
+#deck::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100vw;height:100vh;scroll-snap-align:start;position:relative;overflow:hidden}
+.stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale(var(--k,1));padding:60px 80px 100px;display:flex;flex-direction:column}
+.chip{display:inline-flex;align-items:center;gap:10px;font:600 15px Inter;color:var(--c,var(--gold));background:color-mix(in srgb,var(--c,var(--gold)) 14%,transparent);border:1px solid color-mix(in srgb,var(--c,var(--gold)) 30%,transparent);padding:6px 16px;border-radius:99px;width:max-content}
+.chip i{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
+h2{font:700 50px/1.06 Sora,sans-serif;letter-spacing:-.02em;margin:16px 0 30px}
+h3{font:600 22px/1.25 Sora,sans-serif}
+.lede{font-size:21px;color:var(--mute);line-height:1.55}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:22px;padding:28px;position:relative;overflow:hidden}
+.mute{color:var(--mute)}.coral{color:var(--coral)}.teal{color:var(--teal)}.gold{color:var(--gold)}
+.num{font-variant-numeric:tabular-nums}
+svg.ic{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.icb{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 35%,transparent)}
+
+/* entrance motion */
+.a,.al,.ar,.pop{opacity:0}
+.a{transform:translateY(28px)}.al{transform:translateX(-40px)}.ar{transform:translateX(40px)}.pop{transform:scale(.85)}
+.on .a,.on .al,.on .ar,.on .pop{opacity:1;transform:none;transition:opacity .8s cubic-bezier(.2,.7,.2,1) var(--d,0s),transform .9s cubic-bezier(.2,.8,.2,1.05) var(--d,0s)}
+.ln{fill:none;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 1;stroke-dashoffset:1}
+.on .ln{stroke-dashoffset:0;transition:stroke-dashoffset var(--dur,1.3s) cubic-bezier(.6,0,.25,1) var(--d,0s)}
+.pt{opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(0)}
+.on .pt{opacity:1;transform:scale(1);transition:opacity .3s var(--d),transform .5s cubic-bezier(.3,1.6,.5,1) var(--d)}
+.ar-fill{opacity:0}.on .ar-fill{opacity:1;transition:opacity 1.4s ease var(--d,.6s)}
+.bar{transform-box:fill-box;transform-origin:bottom;transform:scaleY(0)}
+.on .bar{transform:scaleY(1);transition:transform .7s cubic-bezier(.2,.8,.2,1) var(--d)}
+.ax{font:500 13px Inter;fill:var(--dim)}.gl{stroke:var(--line)}
+
+/* cover */
+.cover{padding-top:120px}
+.ticker{position:absolute;top:0;left:0;right:0;height:52px;border-bottom:1px solid var(--line);background:rgba(10,13,20,.7);overflow:hidden;display:flex;align-items:center}
+.track{display:flex;gap:56px;white-space:nowrap;animation:tick 38s linear infinite;font:600 15px Inter;color:var(--mute);padding-left:40px}
+.track b{font-weight:700}.track span{flex:none}.ticker .track{flex:none}
+@keyframes tick{to{transform:translateX(-50%)}}
+.cover h1{font:800 104px/1 Sora,sans-serif;letter-spacing:-.035em;margin:26px 0 22px;max-width:1100px;background:linear-gradient(100deg,#fff 0%,#fff 38%,var(--teal) 50%,#fff 62%,#fff 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 7s ease-in-out infinite}
+@keyframes shine{0%,100%{background-position:100% 0}50%{background-position:0 0}}
+.cover .sub{font-size:26px;color:var(--mute)}
+.names{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:30px;font-size:18px;color:#cfd5e3}
+.names span{display:flex;align-items:center;gap:10px}.names span::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+.covchart{position:absolute;left:0;bottom:0;width:1600px;height:400px}
+.covstat{position:absolute;right:80px;top:150px;text-align:right}
+.covstat .big{font:700 64px/1 Sora;color:var(--teal)}
+.covstat small{display:block;color:var(--mute);font-size:16px;margin-top:8px}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.35;animation:float 12s ease-in-out infinite}
+@keyframes float{50%{transform:translate(40px,-30px) scale(1.1)}}
+
+/* team */
+.team{display:grid;grid-template-columns:repeat(5,1fr);gap:24px;flex:1;align-items:center}
+.member{height:440px;border-radius:26px;padding:36px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;text-align:center;background:linear-gradient(165deg,color-mix(in srgb,var(--c) 30%,var(--panel2)),var(--panel) 75%);border:1px solid color-mix(in srgb,var(--c) 35%,transparent);transition:transform .4s,box-shadow .4s}
+.member:hover{transform:translateY(-10px) rotate(-1deg);box-shadow:0 30px 60px -20px color-mix(in srgb,var(--c) 60%,transparent)}
+.avatar{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;font:700 46px Sora;color:#0b0e15;background:var(--c);box-shadow:0 0 0 10px color-mix(in srgb,var(--c) 18%,transparent),0 0 60px color-mix(in srgb,var(--c) 45%,transparent)}
+.on .avatar{animation:breathe 4s ease-in-out infinite}
+@keyframes breathe{50%{box-shadow:0 0 0 18px color-mix(in srgb,var(--c) 10%,transparent),0 0 80px color-mix(in srgb,var(--c) 55%,transparent)}}
+.member h3{font-size:28px;line-height:1.2}
+
+/* agenda */
+.agenda{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;flex:1}
+.tile{border-radius:26px;padding:36px 30px;display:flex;flex-direction:column;gap:18px;background:linear-gradient(170deg,color-mix(in srgb,var(--c) 22%,var(--panel2)),var(--panel));border:1px solid color-mix(in srgb,var(--c) 30%,transparent);transition:transform .35s}
+.tile:hover{transform:translateY(-8px)}
+.tile .n{font:800 92px/1 Sora;color:var(--c);opacity:.9;margin-top:auto}
+.tile h3{font-size:30px}.tile p{color:var(--mute);font-size:19px}
+
+/* problem */
+.two{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;flex:1}
+.sig{display:flex;gap:20px;align-items:center;padding:14px 0}
+.sig .dot{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;font:700 22px Sora;color:#0b0e15;background:var(--c);flex:none;box-shadow:0 0 24px color-mix(in srgb,var(--c) 50%,transparent)}
+.sig b{font:600 22px Sora;display:block}.sig div>span{color:var(--mute)}
+.arrows{display:inline-flex;gap:6px;margin-left:10px;font-size:16px;vertical-align:middle}
+.question{margin-top:22px;display:flex;gap:20px;align-items:flex-start;border-color:color-mix(in srgb,var(--violet) 40%,transparent);background:linear-gradient(120deg,color-mix(in srgb,var(--violet) 20%,var(--panel2)),var(--panel))}
+.question p{font-size:21px;line-height:1.45}
+.donutwrap{display:grid;grid-template-columns:360px 1fr;gap:26px;align-items:center}
+.donut circle{fill:none;stroke-width:40;transition:stroke-dasharray 1.4s cubic-bezier(.6,0,.2,1)}
+.dcenter{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.dcenter b{font:700 52px/1 Sora}.dcenter span{color:var(--mute);font-size:16px}
+.leg{display:flex;flex-direction:column;gap:18px}
+.leg div{border-left:4px solid var(--c);padding-left:16px}
+.leg b{font:700 30px/1.1 Sora;color:var(--c);white-space:nowrap}.leg div>span{display:block;color:var(--mute);font-size:16px}
+
+/* data facts */
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:22px}
+.fact{display:flex;gap:18px;align-items:center;padding:22px 24px}
+.fact b{font:700 34px/1.05 Sora;display:block;white-space:nowrap}
+.fact div>span{color:var(--mute);font-size:15px;line-height:1.35;display:block;margin-top:4px}.fact>div:last-child{flex:1}
+.charts2{display:grid;grid-template-columns:1fr 1fr;gap:20px;flex:1}
+.charts2 .card{padding:20px 22px 10px;display:flex;flex-direction:column}
+.charts2 h4{font:600 17px Inter;color:#cfd5e3;margin-bottom:4px}
+.fig{position:relative;flex:1}.fig>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.caption{color:var(--mute);font-size:16px;margin-top:14px}
+.peak{animation:pulse 1.8s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(3.2);opacity:0}}
+
+/* method */
+.steps{display:grid;grid-template-columns:repeat(6,1fr);gap:22px;flex:1;position:relative;margin-bottom:26px}
+.step{border-radius:22px;padding:26px 22px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(175deg,color-mix(in srgb,var(--c) 26%,var(--panel2)),var(--panel));border:1px solid color-mix(in srgb,var(--c) 38%,transparent);position:relative}
+.step small{font:700 13px Inter;color:var(--c);letter-spacing:.06em}
+.step h3{font-size:25px}.step p{color:var(--mute);font-size:17px}
+.step:nth-child(-n+5)::after{content:"";position:absolute;right:-19px;top:50%;width:16px;height:16px;border-top:3px solid var(--dim);border-right:3px solid var(--dim);transform:translateY(-50%) rotate(45deg)}
+.mini{display:flex;flex-direction:column;gap:8px;margin-top:auto}
+.mini span{background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font:600 15px Inter;text-align:center}
+.flowpulse{position:absolute;left:0;right:0;bottom:-14px;height:3px;border-radius:3px;background:var(--line);overflow:hidden}
+.flowpulse::after{content:"";position:absolute;top:0;bottom:0;width:180px;background:linear-gradient(90deg,transparent,var(--teal),transparent);animation:run 3s linear infinite}
+@keyframes run{from{left:-180px}to{left:100%}}
+.banner{display:flex;gap:18px;align-items:center;padding:22px 28px;border-color:color-mix(in srgb,var(--gold) 40%,transparent);background:linear-gradient(90deg,color-mix(in srgb,var(--gold) 16%,var(--panel2)),var(--panel))}
+.banner p{font-size:21px}
+
+/* flowchart */
+.pipe{display:grid;grid-template-columns:270px 1fr 300px 1fr 280px 1fr 280px;align-items:center;margin-bottom:22px}
+.node{border-radius:18px;padding:18px 20px;display:flex;gap:14px;align-items:center;border:1px solid var(--line);background:var(--panel2)}
+.node b{display:block;font:600 19px Sora}.node span{color:var(--mute);font-size:15px}
+.node.java{background:linear-gradient(135deg,#3b6cf6,#6d4cf0);border:0;padding:26px 22px;box-shadow:0 20px 50px -20px #4f5cf5}
+.node.java span{color:#dfe4ff}
+.node.out{background:linear-gradient(135deg,var(--gold),#ff8a3d);border:0;color:#1b1406}.node.out span{color:#4a3510}
+.files{display:flex;flex-direction:column;gap:12px}
+.conn{height:4px;margin:0 10px;border-radius:4px;background:repeating-linear-gradient(90deg,var(--teal) 0 12px,transparent 12px 22px);background-size:22px 4px;animation:dash .8s linear infinite;position:relative}
+.conn::after{content:"";position:absolute;right:-4px;top:50%;width:12px;height:12px;border-top:4px solid var(--teal);border-right:4px solid var(--teal);transform:translateY(-50%) rotate(45deg)}
+@keyframes dash{to{background-position:22px 0}}
+.inside{flex:1;padding:24px 28px}
+.inside h4{font:700 15px Inter;color:var(--sky);letter-spacing:.05em;margin-bottom:18px}
+.jsteps{display:grid;grid-template-columns:repeat(4,1fr);gap:44px 40px;margin-top:8px}.js{min-height:84px}
+.js{display:flex;gap:14px;align-items:center;padding:16px 18px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:17px;position:relative;animation:hl 6.4s ease-in-out infinite;animation-delay:calc(var(--i)*.8s)}
+.js em{font:700 18px Sora;font-style:normal;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--sky);color:#0b0e15;flex:none}
+@keyframes hl{0%,14%{background:color-mix(in srgb,var(--sky) 22%,transparent);border-color:var(--sky);box-shadow:0 0 30px -6px var(--sky)}22%,100%{background:rgba(255,255,255,.04);border-color:var(--line);box-shadow:none}}
+.jsteps .js:nth-child(-n+3)::after,.jsteps .js:nth-child(n+6)::after{content:"→";position:absolute;right:-30px;color:var(--dim);font-size:22px}
+.jsteps .js:nth-child(n+6)::after{content:"←";right:auto;left:-30px}
+.jsteps .js:nth-child(4)::after{content:"↓";position:absolute;bottom:-36px;left:50%;color:var(--dim);font-size:20px}
+
+/* streaks */
+.streakgrid{display:grid;grid-template-columns:1.25fr .75fr;gap:26px;flex:1}
+.strip{display:grid;grid-template-columns:90px repeat(10,1fr);gap:10px;align-items:center;margin:20px 0 6px}
+.strip .lab{color:var(--mute);font-size:16px}
+.cell{height:64px;border-radius:14px;display:grid;place-items:center;font:700 22px Sora;color:#0b0e15;background:var(--c)}
+.cell.n{background:rgba(255,255,255,.08);color:var(--mute)}
+.sk{text-align:center;font:700 24px Sora}
+.brk{grid-row:3;height:40px;border:3px solid var(--c);border-top:0;border-radius:0 0 14px 14px;display:grid;place-items:end center;padding-bottom:0}
+.brk span{transform:translateY(34px);font:700 15px Inter;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);padding:4px 12px;border-radius:99px;white-space:nowrap}
+.formula{font:600 22px Sora;color:var(--sky);background:rgba(79,179,232,.08);border:1px solid rgba(79,179,232,.3);border-radius:14px;padding:16px 20px;margin:14px 0}
+ul.clean{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.clean li{padding-left:22px;position:relative;color:#cfd5e3}
+ul.clean li::before{content:"";position:absolute;left:0;top:.6em;width:8px;height:8px;border-radius:50%;background:var(--c,var(--teal))}
+.obj{background:linear-gradient(170deg,#1d2540,#121726);border-color:rgba(255,176,32,.3)}
+.obj h5{font:700 13px Inter;color:var(--gold);letter-spacing:.08em;margin:18px 0 10px}
+
+/* results */
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;height:330px}
+.rgrid .card{padding:18px 22px 8px;display:flex;flex-direction:column}
+.legend{display:flex;gap:28px;justify-content:center;margin:12px 0 14px;font-size:16px;color:#cfd5e3}
+.legend span{display:flex;align-items:center;gap:8px}.legend span::before{content:"";width:22px;height:4px;border-radius:3px;background:var(--c)}
+.rbottom{display:grid;grid-template-columns:1fr 400px;gap:20px;flex:1}
+table.t{width:100%;border-collapse:separate;border-spacing:0;font-size:17px}
+.t th,.t td{padding:9px 12px;text-align:right;white-space:nowrap}
+.t th:first-child,.t td:first-child{text-align:left}
+.t thead th{color:var(--mute);font-weight:600;font-size:15px;border-bottom:1px solid var(--line)}
+.t thead tr:first-child th{color:#cfd5e3;font-size:14px;border:0;padding-bottom:2px}
+.t tbody tr{transition:background .25s}.t tbody tr:hover{background:rgba(255,255,255,.04)}
+.t td.p{font-weight:700}
+.take{border-color:color-mix(in srgb,var(--gold) 40%,transparent);background:linear-gradient(160deg,#20253a,#131826)}
+.take small{font:700 13px Inter;color:var(--gold);letter-spacing:.08em;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.take p{font-size:19px;line-height:1.5}
+.warn{position:absolute;right:80px;top:76px;display:flex;align-items:center;gap:10px;padding:10px 20px;border-radius:99px;background:rgba(255,176,32,.14);border:1px solid rgba(255,176,32,.45);color:var(--gold);font:700 17px Inter;animation:wob 2.6s ease-in-out infinite}
+@keyframes wob{50%{transform:scale(1.05)}}
+
+/* heatmap */
+.hm{display:grid;grid-template-columns:1fr 340px;gap:24px;flex:1}
+.heat td.h{border-radius:10px;font-weight:700;opacity:0;transform:scale(.6)}
+.on .heat td.h{opacity:1;transform:none;transition:opacity .5s var(--d),transform .6s cubic-bezier(.3,1.5,.5,1) var(--d)}
+.heat{border-spacing:6px!important;font-size:19px!important}
+.heat td{padding:12px 14px!important}
+.heat tbody tr:last-child td{color:var(--mute);border-top:1px solid var(--line)}
+.L-3{background:#ff6f61;color:#1b0b09}.L-2{background:rgba(255,111,97,.55)}.L-1{background:rgba(255,111,97,.25)}.L0{background:rgba(255,255,255,.08)}.L1{background:rgba(47,209,188,.25)}.L2{background:rgba(47,209,188,.55)}.L3{background:#2fd1bc;color:#06201c}
+.scale{display:flex;flex-direction:column;gap:10px;margin:14px 0 24px}
+.scale div{display:flex;align-items:center;gap:12px;font-size:16px;color:#cfd5e3}
+.scale i{width:34px;height:22px;border-radius:6px;flex:none}
+
+/* luck */
+.luck{display:grid;grid-template-columns:1fr 1fr;gap:24px;flex:1}
+.luck .card{display:flex;flex-direction:column;padding:24px 28px}
+.luck .fig{height:250px;flex:none;margin:12px 0 10px}
+.luck .big{font:800 58px/1 Sora}
+.verdict{margin-top:auto;align-self:flex-start;padding:10px 20px;border-radius:99px;font:700 17px Inter;color:#0b0e15;background:var(--c)}
+
+/* conclusion */
+.concl{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.concl .card{display:flex;gap:22px;padding:28px 30px}
+.concl p{color:var(--mute);font-size:18px;margin-top:8px}
+.thanks{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:30px}
+.thanks h2{font-size:72px;margin:0;background:linear-gradient(90deg,var(--gold),var(--coral),var(--teal),var(--gold));background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
+
+/* chrome */
+#progress{position:fixed;top:0;left:0;height:3px;z-index:20;background:linear-gradient(90deg,var(--coral),var(--gold),var(--teal));transition:width .5s ease}
+#nav{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:99px;background:rgba(14,18,28,.82);border:1px solid var(--line);backdrop-filter:blur(14px);transition:opacity .4s}
+#nav button{all:unset;cursor:pointer;height:40px;min-width:40px;padding:0 12px;border-radius:99px;display:grid;place-items:center;color:#cfd5e3;font:600 14px Inter;transition:background .2s,color .2s}
+#nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+#nav button:focus-visible{outline:2px solid var(--teal)}
+#nav button:disabled{opacity:.3;cursor:default}
+#dots{display:flex;gap:6px;align-items:center}
+#dots button{min-width:0!important;width:9px;height:9px!important;padding:0!important;border-radius:50%;background:rgba(255,255,255,.2)}
+#dots button.cur{background:var(--teal);width:26px;border-radius:9px}
+#count{font:600 14px Inter;color:var(--mute);min-width:56px;text-align:center}
+#notes{position:fixed;left:50%;bottom:76px;transform:translate(-50%,20px);width:min(980px,92vw);z-index:19;padding:20px 26px;border-radius:18px;background:rgba(14,18,28,.94);border:1px solid var(--line);backdrop-filter:blur(14px);font-size:17px;line-height:1.6;color:#dbe0ec;opacity:0;pointer-events:none;transition:.35s}
+#notes.open{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#notes b{display:block;font:700 13px Inter;color:var(--gold);letter-spacing:.08em;margin-bottom:6px}
+#hint{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:20;padding:10px 18px;border-radius:99px;background:rgba(14,18,28,.9);border:1px solid var(--line);font-size:14px;color:var(--mute);transition:opacity 1s}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.a,.al,.ar,.pop,.pt,.ar-fill,.heat td.h{opacity:1!important;transform:none!important}.ln{stroke-dashoffset:0!important}.bar{transform:none!important}}
+</style>
+</head>
+<body>
+<canvas id="bgfx"></canvas><div class="gridbg"></div>
+<div id="progress"></div>
+<main id="deck">
+
+<!-- 1 COVER -->
+<section class="slide"><div class="stage cover">
+  <div class="orb" style="width:520px;height:520px;background:var(--violet);left:-120px;top:-80px"></div>
+  <div class="orb" style="width:420px;height:420px;background:var(--teal);right:-60px;top:260px;animation-delay:-5s"></div>
+  <div class="ticker"><div class="track" id="tape"></div></div>
+  <div class="chip a" style="--c:var(--gold)"><i></i>Project 1 · Group C</div>
+  <h1 class="a" style="--d:.15s">When Fear and Price Agree</h1>
+  <p class="sub a" style="--d:.3s">S&amp;P 500 &amp; VIX pattern analysis · May 1996 – October 2025</p>
+  <div class="names a" style="--d:.45s">
+    <span style="--c:var(--coral)">Jonathon Master</span><span style="--c:var(--teal)">James Choo</span><span style="--c:var(--gold)">Jeetendra Pathek</span><span style="--c:var(--violet)">Robin Sarker</span><span style="--c:var(--sky)">Thet Paing Hein</span>
+  </div>
+  <div class="covstat a" style="--d:.9s"><div class="big num"><span data-count="6629" data-from="678">6,629</span></div><small>S&amp;P 500 monthly close · from 678</small></div>
+  <svg class="covchart" id="covChart" viewBox="0 0 1600 400" preserveAspectRatio="none"></svg>
+</div></section>
+
+<!-- 2 TEAM -->
+<section class="slide"><div class="stage">
+  <div class="chip a" style="--c:var(--teal)"><i></i>Group C</div>
+  <h2 class="a" style="--d:.1s">Meet the team</h2>
+  <div class="team">
+    <div class="member pop" style="--c:var(--violet);--d:.2s"><div class="avatar">JM</div><h3>Jonathon<br>Master</h3></div>
+    <div class="member pop" style="--c:var(--sky);--d:.32s"><div class="avatar">JC</div><h3>James<br>Choo</h3></div>
+    <div class="member pop" style="--c:var(--teal);--d:.44s"><div class="avatar">JP</div><h3>Jeetendra<br>Pathek</h3></div>
+    <div class="member pop" style="--c:var(--coral);--d:.56s"><div class="avatar">RS</div><h3>Robin<br>Sarker</h3></div>
+    <div class="member pop" style="--c:var(--gold);--d:.68s"><div class="avatar">TPH</div><h3>Thet Paing<br>Hein</h3></div>
+  </div>
+</div></section>
+
+<!-- 3 AGENDA -->
+<section class="slide"><div class="stage">
+  <div class="chip a" style="--c:var(--violet)"><i></i>Agenda</div>
+  <h2 class="a" style="--d:.1s">What we’ll cover</h2>
+  <div class="agenda">
+    <div class="tile a" style="--c:var(--violet);--d:.2s"><div class="icb" data-ic="search"></div><h3>The problem</h3><p>Why days when stocks and fear move together are unusual</p><div class="n">01</div></div>
+    <div class="tile a" style="--c:var(--sky);--d:.35s"><div class="icb" data-ic="nodes"></div><h3>Our method</h3><p>How we turned 29 years of daily data into statistics</p><div class="n">02</div></div>
+    <div class="tile a" style="--c:var(--gold);--d:.5s"><div class="icb" data-ic="chart"></div><h3>The results</h3><p>1, 2 and 3 days in a row, compared with an ordinary day</p><div class="n">03</div></div>
+    <div class="tile a" style="--c:var(--teal);--d:.65s"><div class="icb" data-ic="flag"></div><h3>Conclusion</h3><p>What the patterns tell us, and how reliable they are</p><div class="n">04</div></div>
+  </div>
+</div></section>
+
+<!-- 4 PROBLEM -->
+<section class="slide"><div class="stage">
+  <div class="chip a" style="--c:var(--violet)"><i></i>Part 1 · The problem</div>
+  <h2 class="a" style="--d:.1s">Fear and price usually move apart</h2>
+  <div class="two">
+    <div>
+      <p class="lede a" style="--d:.2s">The VIX is Wall Street’s “fear gauge”. On most days, when the S&amp;P 500 rises, fear falls, and when it falls, fear rises. We gave every day a signal:</p>
+      <div style="margin-top:14px">
+        <div class="sig al" style="--c:var(--coral);--d:.35s"><div class="dot">1</div><div><b>Both UP <span class="arrows"><span class="coral">S&amp;P ▲</span><span class="coral">VIX ▲</span></span></b><span>S&amp;P 500 up and VIX up</span></div></div>
+        <div class="sig al" style="--c:var(--teal);--d:.5s"><div class="dot">0</div><div><b>Both DOWN <span class="arrows"><span class="teal">S&amp;P ▼</span><span class="teal">VIX ▼</span></span></b><span>S&amp;P 500 down and VIX down</span></div></div>
+        <div class="sig al" style="--c:var(--slate);--d:.65s"><div class="dot">−1</div><div><b>Normal</b><span>They move in opposite directions, or one is unchanged</span></div></div>
+      </div>
+      <div class="card question a" style="--d:.8s"><div class="icb" style="--c:var(--violet)" data-ic="question"></div><div><h3 style="color:#c9c1ff;margin-bottom:6px">Our question</h3><p>After these unusual days, does the S&amp;P 500 do better or worse than usual over the next 1 to 5 trading days?</p></div></div>
+    </div>
+    <div class="card ar" style="--d:.3s;display:flex;flex-direction:column;justify-content:center">
+      <div class="donutwrap">
+        <div style="position:relative;width:360px;height:360px">
+          <svg class="donut" id="donut" viewBox="0 0 360 360" width="360" height="360"></svg>
+          <div class="dcenter"><b class="num" data-count="7397">7,397</b><span>daily moves</span></div>
+        </div>
+        <div class="leg">
+          <div style="--c:var(--slate)"><b class="num"><span data-count="79.4" data-dec="1">79.4</span>%</b><span>Opposite directions · 5,870 days</span></div>
+          <div style="--c:var(--coral)"><b class="num"><span data-count="10" data-dec="1">10.0</span>%</b><span>Both UP · 740 days</span></div>
+          <div style="--c:var(--teal)"><b class="num"><span data-count="10" data-dec="1">10.0</span>%</b><span>Both DOWN · 740 days</span></div>
+          <div style="--c:var(--gold)"><b class="num"><span data-count="0.6" data-dec="1">0.6</span>%</b><span>One unchanged · 47 days</span></div>
+        </div>
+      </div>
+      <p class="caption">Share of all daily moves, May 1996 – Oct 2025. Both UP and Both DOWN each happen on about 1 day in 10.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- 5 DATA -->
+<section class="slide"><div class="stage">
+  <div class="chip a" style="--c:var(--violet)"><i></i>Part 1 · The problem</div>
+  <h2 class="a" style="--d:.1s">29 years of daily data</h2>
+  <div class="facts">
+    <div class="card fact a" style="--d:.2s"><div class="icb" style="--c:var(--sky)" data-ic="cal"></div><div><b class="num" data-count="7398">7,398</b><span>trading days in each file</span></div></div>
+    <div class="card fact a" style="--d:.3s"><div class="icb" style="--c:var(--violet)" data-ic="arrows"></div><div><b class="num">1996 → 2025</b><span>May 22, 1996 to Oct 16, 2025</span></div></div>
+    <div class="card fact a" style="--d:.4s"><div class="icb" style="--c:var(--teal)" data-ic="trend"></div><div><b class="num">678 → <span data-count="6629" data-from="678">6,629</span></b><span>The S&amp;P 500 ended 9.8× higher</span></div></div>
+    <div class="card fact a" style="--d:.5s"><div class="icb" style="--c:var(--coral)" data-ic="zap"></div><div><b class="num" data-count="82.69" data-dec="2">82.69</b><span>Highest VIX close (Mar 16, 2020)</span></div></div>
+  </div>
+  <div class="charts2">
+    <div class="card a" style="--d:.5s"><h4>S&amp;P 500 · monthly close</h4><div class="fig"><svg id="spxChart"></svg></div></div>
+    <div class="card a" style="--d:.6s"><h4>VIX fear gauge · monthly close</h4><div class="fig"><svg id="vixChart"></svg></div></div>
+  </div>
+  <p class="caption a" style="--d:.8s">The two biggest VIX spikes, 80.86 in Nov 2008 and 82.69 in Mar 2020 (daily closes), came as the S&amp;P 500 fell hardest. That is the normal “opposite” relationship.</p>
+</div></section>
+
+<!-- 6 METHOD -->
+<section class="slide"><div class="stage">
+  <div class="chip a" style="--c:var(--sky)"><i></i>Part 2 · Our method</div>
+  <h2 class="a" style="--d:.1s">How we approached the problem</h2>
+  <div class="steps">
+    <div class="step a" style="--c:var(--violet);--d:.2s"><div class="icb" data-ic="db"></div><small>STEP 1</small><h3>Input</h3><p>Daily closes for the S&amp;P 500 and the VIX</p></div>
+    <div class="step a" style="--c:#6d6cf5;--d:.32s"><div class="icb" data-ic="search"></div><small>STEP 2</small><h3>Identify</h3><p>Days when both go UP (1) or both go DOWN (0)</p></div>
+    <div class="step a" style="--c:var(--sky);--d:.44s"><div class="icb" data-ic="layers"></div><small>STEP 3</small><h3>Group by streak</h3><div class="mini"><span>1 day</span><span>2 in a row</span><span>3 in a row</span></div></div>
+    <div class="step a" style="--c:var(--teal);--d:.56s"><div class="icb" data-ic="cal"></div><small>STEP 4</small><h3>Measure</h3><p>S&amp;P 500 change 1, 2, 3, 4 and 5 days later</p></div>
+    <div class="step a" style="--c:#3fbf7f;--d:.68s"><div class="icb" data-ic="calc"></div><small>STEP 5</small><h3>Calculate</h3><p>Winners, losers and average profit</p></div>
+    <div class="step a" style="--c:var(--coral);--d:.8s"><div class="icb" data-ic="present"></div><small>STEP 6</small><h3>Output</h3><p>Statistics, tables and graphs</p></div>
+    <div class="flowpulse"></div>
+  </div>
+  <div class="card banner a" style="--d:1s"><div class="icb" style="--c:var(--gold)" data-ic="scale"></div><p><b>Fair comparison:</b> every result is compared with a baseline, the S&amp;P 500’s change after any ordinary day.</p></div>
+</div></section>
+
+<!-- 7 FLOWCHART -->
+<section class="slide"><div class="stage">
+  <div class="chip a" style="--c:var(--sky)"><i></i>Part 2 · Our method</div>
+  <h2 class="a" style="--d:.1s">Data processing flowchart</h2>
+  <div class="pipe">
+    <div class="files al" style="--d:.2s">
+      <div class="node"><div class="icb" style="--c:var(--sky);width:46px;height:46px" data-ic="file"></div><div><b>spx_data.csv</b><span>S&amp;P 500 closes</span></div></div>
+      <div class="node"><div class="icb" style="--c:var(--coral);width:46px;height:46px" data-ic="file"></div><div><b>vix_data.csv</b><span>VIX closes</span></div></div>
+    </div>
+    <div class="conn a" style="--d:.4s"></div>
+    <div class="node java pop" style="--d:.5s"><svg class="ic" style="width:40px;height:40px" data-ic2="cpu"></svg><div><b>Java program</b><span>PatternAnalysis</span></div></div>
+    <div class="conn a" style="--d:.7s"></div>
+    <div class="node pop" style="--d:.8s"><div class="icb" style="--c:var(--teal);width:46px;height:46px" data-ic="grid"></div><div><b>results.csv</b><span>45 rows of statistics</span></div></div>
+    <div class="conn a" style="--d:1s"></div>
+    <div class="node out pop" style="--d:1.1s"><svg class="ic" style="width:36px;height:36px" data-ic2="present"></svg><div><b>Charts &amp; slides</b><span>this presentation</span></div></div>
+  </div>
+  <div class="card inside a" style="--d:1.2s">
+    <h4>INSIDE THE JAVA PROGRAM</h4>
+    <div class="jsteps">
+      <div class="js" style="--i:0"><em>1</em>Load both files into ArrayLists</div>
+      <div class="js" style="--i:1"><em>2</em>Check every date matches</div>
+      <div class="js" style="--i:2"><em>3</em>Mark each day UP or DOWN</div>
+      <div class="js" style="--i:3"><em>4</em>Build the signal list: 1, 0 or −1</div>
+      <div class="js" style="--i:7"><em>8</em>Compute % winners and averages</div>
+      <div class="js" style="--i:6"><em>7</em>Add the result to its statistics object in a Map</div>
+      <div class="js" style="--i:5"><em>6</em>Measure the S&amp;P 500 change 1–5 days later</div>
+      <div class="js" style="--i:4"><em>5</em>Count the streak: 1st, 2nd or 3rd day</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 8 STREAKS -->
+<section class="slide"><div class="stage">
+  <div class="chip a" style="--c:var(--sky)"><i></i>Part 2 · Our method</div>
+  <h2 class="a" style="--d:.1s">Counting streaks and scoring each day</h2>
+  <div class="streakgrid">
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="card a" style="--d:.2s;padding-bottom:52px">
+        <h3>Example: ten days of signals</h3>
+        <div class="strip" id="strip"></div>
+      </div>
+      <div class="card a" style="--d:.5s">
+        <h3>How we score each signal day</h3>
+        <div class="formula">Profit % = (later close − signal-day close) ÷ signal-day close × 100</div>
+        <ul class="clean"><li>“Later close” = the S&amp;P 500 close 1, 2, 3, 4 or 5 trading days later</li><li>Profit above 0 is a winner; anything else is a loser</li></ul>
+      </div>
+    </div>
+    <div class="card obj ar" style="--d:.4s">
+      <div style="display:flex;gap:16px;align-items:center"><div class="icb" style="--c:var(--gold)" data-ic="box"></div><h3>One statistics object</h3></div>
+      <h5>RECORDED EVERY TIME</h5>
+      <ul class="clean" style="--c:var(--gold)"><li>Number of trades</li><li>Number of winners and losers</li><li>Total profit %</li><li>Total profit for winners and for losers</li></ul>
+      <h5>COMPUTED AT THE END</h5>
+      <ul class="clean" style="--c:var(--teal)"><li>% winners = winners ÷ trades × 100</li><li>Average profit = total profit ÷ trades</li><li>Average winner and average loser</li></ul>
+      <p class="caption" style="margin-top:22px">One object for each pattern, streak length and number of days ahead.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- 9–11 RESULTS (built by script) -->
+<section class="slide" data-r="0"></section>
+<section class="slide" data-r="1"></section>
+<section class="slide" data-r="2"></section>
+
+<!-- 12 HEATMAP -->
+<section class="slide"><div class="stage">
+  <div class="chip a" style="--c:var(--gold)"><i></i>Part 3 · The results</div>
+  <h2 class="a" style="--d:.1s">Comparison: all results side by side</h2>
+  <div class="hm">
+    <div class="card a" style="--d:.2s;padding:18px 20px">
+      <table class="t heat" id="heat"></table>
+      <p class="caption" style="margin-top:8px;font-size:15px">Each cell is compared with an ordinary day at the same horizon. About the same = within 0.02 points (profit) or 1 point (win rate). * Fewer than 20 cases: not reliable.</p>
+    </div>
+    <div class="card ar" style="--d:.4s">
+      <h3>How to read the colors</h3>
+      <div class="scale">
+        <div><i class="L3"></i>Much better than normal</div><div><i class="L2"></i>Better than normal</div><div><i class="L1"></i>Slightly better</div><div><i class="L0"></i>About the same</div><div><i class="L-1"></i>Slightly worse</div><div><i class="L-2"></i>Worse than normal</div><div><i class="L-3"></i>Much worse than normal</div>
+      </div>
+      <h3 style="margin-bottom:8px">What stands out</h3>
+      <p class="mute" style="font-size:17px">Both UP rows are coral almost everywhere. Both DOWN (1 day) is teal or gray. The 3-in-a-row rows have strong colors but only 8 and 6 cases.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- 13 LUCK -->
+<section class="slide"><div class="stage">
+  <div class="chip a" style="--c:var(--gold)"><i></i>Part 3 · The results</div>
+  <h2 class="a" style="--d:.1s;margin-bottom:12px">Real pattern or just luck?</h2>
+  <p class="lede a" style="--d:.2s;margin-bottom:22px">We drew 100,000 random sets of days, the same size as each group, and counted how often random days did as badly (or as well).</p>
+  <div class="luck">
+    <div class="card a" style="--d:.3s">
+      <div style="display:flex;gap:16px;align-items:center"><div class="icb" style="--c:var(--coral)" data-ic="alert"></div><div><h3>Both UP · next day</h3><span class="mute" style="font-size:16px">652 signal days averaged −0.11% (ordinary day: +0.04%)</span></div></div>
+      <div class="fig"><svg id="histUp"></svg></div>
+      <div><span class="big coral num" data-count="56">56</span> <b style="font-size:22px">of 100,000 random sets</b></div>
+      <p class="mute">did as badly as our signal days the next day</p>
+      <p style="font-size:15px;color:var(--dim);margin:4px 0 14px">3 days later: 11 of 100,000 · 5 days later: 565 of 100,000</p>
+      <div class="verdict" style="--c:var(--coral)">Almost certainly not luck</div>
+    </div>
+    <div class="card a" style="--d:.45s">
+      <div style="display:flex;gap:16px;align-items:center"><div class="icb" style="--c:var(--teal)" data-ic="trend"></div><div><h3>Both DOWN · next day</h3><span class="mute" style="font-size:16px">667 signal days averaged +0.08% (ordinary day: +0.04%)</span></div></div>
+      <div class="fig"><svg id="histDown"></svg></div>
+      <div><span class="big teal num" data-count="14793">14,793</span> <b style="font-size:22px">of 100,000 random sets</b></div>
+      <p class="mute">did as well as our signal days the next day</p>
+      <p style="font-size:15px;color:var(--dim);margin:4px 0 14px">3 days later: 42,472 of 100,000 · 5 days later: 33,218 of 100,000</p>
+      <div class="verdict" style="--c:var(--slate)">Could easily be luck</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 14 CONCLUSION -->
+<section class="slide"><div class="stage">
+  <div class="orb" style="width:500px;height:500px;background:var(--violet);right:-150px;bottom:-200px;opacity:.25"></div>
+  <div class="chip a" style="--c:var(--teal)"><i></i>Part 4 · Conclusion</div>
+  <h2 class="a" style="--d:.1s;margin-bottom:8px">Conclusion</h2>
+  <p class="lede a" style="--d:.15s;margin-bottom:26px">What 29 years of S&amp;P 500 and VIX data tell us</p>
+  <div class="concl">
+    <div class="card a" style="--d:.25s"><div class="icb" style="--c:var(--coral)" data-ic="alert"></div><div><h3>Both UP is a warning sign</h3><p>When stocks and fear rise together, the S&amp;P 500 does worse than normal for the next 1–5 days. Random days almost never do this badly.</p></div></div>
+    <div class="card a" style="--d:.4s"><div class="icb" style="--c:var(--teal)" data-ic="trend"></div><div><h3>Both DOWN is only mildly positive</h3><p>Slightly better than an ordinary day, but random days do as well about 15% of the time, so it could be luck.</p></div></div>
+    <div class="card a" style="--d:.55s"><div class="icb" style="--c:var(--gold)" data-ic="hour"></div><div><h3>Long streaks are too rare</h3><p>3 in a row happened only 8 and 6 times in 29 years, about what chance predicts. Too few to judge.</p></div></div>
+    <div class="card a" style="--d:.7s"><div class="icb" style="--c:var(--violet)" data-ic="scale"></div><div><h3>A warning, not a strategy</h3><p>The difference is a few tenths of a percent per trade, before trading costs: a risk signal, not a money machine.</p></div></div>
+  </div>
+  <div class="thanks a" style="--d:.9s">
+    <h2>Thank you · Questions?</h2>
+    <p class="mute" style="font-size:17px;text-align:right">Group C: Jonathon Master · James Choo · Jeetendra Pathek<br>Robin Sarker · Thet Paing Hein</p>
+  </div>
+</div></section>
+
+</main>
+
+<div id="notes"><b>SPEAKER NOTES</b><span id="notesText"></span></div>
+<div id="hint">← → or click to move · N for speaker notes · F for full screen</div>
+<nav id="nav" aria-label="Slide navigation">
+  <button id="prev" aria-label="Previous slide">←</button>
+  <div id="dots"></div>
+  <span id="count">1 / 14</span>
+  <button id="next" aria-label="Next slide">→</button>
+  <button id="notesBtn" aria-label="Toggle speaker notes">Notes</button>
+  <button id="fsBtn" aria-label="Full screen">⛶</button>
+</nav>
+
+<script>
+{
+const D = {"spx":[669.1,670.6,640.0,652.0,687.3,705.3,757.0,740.7,784.2,790.8,757.1,801.3,848.3,885.1,954.3,899.5,947.3,914.6,955.4,970.4,980.3,1049.3,1101.8,1111.8,1090.8,1133.8,1120.7,957.5,1017.0,1098.7,1163.6,1229.2,1279.6,1238.3,1286.4,1335.2,1301.8,1372.7,1328.7,1320.4,1282.7,1362.9,1389.0,1469.2,1394.5,1359.8,1498.6,1456.0,1420.7,1454.6,1430.8,1517.6,1436.5,1429.4,1315.0,1320.5,1366.0,1239.9,1160.3,1249.5,1255.8,1227.0,1211.2,1133.6,1040.9,1059.8,1139.5,1148.2,1130.2,1106.7,1147.4,1076.9,1067.2,989.4,911.6,916.1,815.3,885.8,936.3,879.8,855.7,841.1,848.1,916.9,963.6,974.5,990.3,1008.0,996.0,1050.7,1058.2,1111.9,1131.1,1144.9,1126.2,1107.2,1120.6,1140.8,1101.7,1104.2,1114.6,1130.2,1173.8,1211.9,1181.3,1210.4,1180.6,1156.8,1191.5,1191.3,1234.2,1220.3,1228.8,1207.0,1249.5,1248.3,1280.1,1280.7,1294.8,1310.6,1270.1,1270.2,1276.7,1303.8,1335.8,1377.9,1400.6,1418.3,1438.2,1406.8,1420.9,1482.4,1530.6,1503.3,1455.3,1474.0,1526.8,1549.4,1481.1,1468.4,1378.5,1330.6,1322.7,1385.6,1400.4,1280.0,1267.4,1282.8,1166.4,968.8,896.2,903.2,825.9,735.1,797.9,872.8,919.1,919.3,987.5,1020.6,1057.1,1036.2,1095.6,1115.1,1073.9,1104.5,1169.4,1186.7,1089.4,1030.7,1101.6,1049.3,1141.2,1183.3,1180.5,1257.6,1286.1,1327.2,1325.8,1363.6,1345.2,1320.6,1292.3,1218.9,1131.4,1253.3,1247.0,1257.6,1312.4,1365.7,1408.5,1397.9,1310.3,1362.2,1379.3,1406.6,1440.7,1412.2,1416.2,1426.2,1498.1,1514.7,1569.2,1597.6,1630.7,1606.3,1685.7,1633.0,1681.5,1756.5,1805.8,1848.4,1782.6,1859.5,1872.3,1884.0,1923.6,1960.2,1930.7,2003.4,1972.3,2018.0,2067.6,2058.9,1995.0,2104.5,2067.9,2085.5,2107.4,2063.1,2103.8,1972.2,1920.0,2079.4,2080.4,2043.9,1940.2,1932.2,2059.7,2065.3,2097.0,2098.9,2173.6,2170.9,2168.3,2126.2,2198.8,2238.8,2278.9,2363.6,2362.7,2384.2,2411.8,2423.4,2470.3,2471.7,2519.4,2575.3,2647.6,2673.6,2823.8,2713.8,2640.9,2648.1,2705.3,2718.4,2816.3,2901.5,2914.0,2711.7,2760.2,2506.8,2704.1,2784.5,2834.4,2945.8,2752.1,2941.8,2980.4,2926.5,2976.7,3037.6,3141.0,3230.8,3225.5,2954.2,2584.6,2912.4,3044.3,3100.3,3271.1,3500.3,3363.0,3270.0,3621.6,3756.1,3714.2,3811.2,3972.9,4181.2,4204.1,4297.5,4395.3,4522.7,4307.5,4605.4,4567.0,4766.2,4515.5,4373.9,4530.4,4131.9,4132.2,3785.4,4130.3,3955.0,3585.6,3872.0,4080.1,3839.5,4076.6,3970.2,4109.3,4169.5,4179.8,4450.4,4589.0,4507.7,4288.0,4193.8,4567.8,4769.8,4845.7,5096.3,5254.3,5035.7,5277.5,5460.5,5522.3,5648.4,5762.5,5705.4,6032.4,5881.6,6040.5,5954.5,5611.8,5569.1,5911.7,6204.9,6339.4,6460.2,6688.5,6629.1],"vix":[16.07,13.68,19.46,17.01,16.95,18.11,17.14,20.92,19.47,21.1,22.14,20.06,19.19,21.53,21.48,24.76,22.91,35.09,27.43,24.01,21.47,18.55,24.22,21.18,21.32,19.71,24.8,44.28,40.95,28.05,26.01,24.42,26.25,27.88,23.26,25.07,25.39,21.09,24.64,24.45,25.41,22.2,24.18,23.4,24.95,23.37,23.67,26.2,23.65,19.54,20.74,16.84,20.57,23.63,29.65,26.85,22.02,28.35,28.64,25.48,22.64,19.06,21.62,24.92,31.93,33.56,24.92,23.8,21.09,21.59,17.4,21.91,19.98,25.4,32.03,32.64,39.69,31.14,27.5,28.62,31.17,29.63,29.15,21.21,19.47,19.52,19.49,18.63,22.72,16.1,16.32,18.31,16.63,14.55,16.74,17.19,15.5,14.34,15.32,15.29,13.34,16.27,13.24,13.29,12.82,12.08,14.02,15.31,13.29,12.04,11.57,12.6,11.92,15.32,12.06,12.07,12.95,12.34,11.39,11.59,16.44,13.08,14.95,12.31,11.98,11.1,10.91,11.56,10.42,15.42,14.64,14.22,13.05,16.23,23.52,23.38,18.0,18.53,22.87,22.5,26.2,26.54,25.61,20.79,17.83,23.95,22.94,20.65,39.39,59.89,55.28,40.0,44.84,46.35,44.14,36.5,28.92,26.35,25.92,26.01,25.61,30.69,24.51,21.68,24.62,19.5,17.59,22.05,32.07,34.54,23.5,26.05,23.7,21.2,23.54,17.75,19.53,18.35,17.74,14.75,15.45,16.52,25.25,31.62,42.96,29.96,27.8,23.4,19.44,18.43,15.5,17.15,24.06,17.08,18.93,17.47,15.73,18.6,15.87,18.02,14.28,15.51,12.7,13.52,16.3,16.86,13.45,17.01,16.6,13.75,13.7,13.72,18.41,14.0,13.88,13.41,11.4,11.57,16.95,11.98,16.31,14.03,13.33,19.2,20.97,13.34,15.29,14.55,13.84,18.23,12.12,28.43,24.5,15.07,16.13,18.21,20.2,20.55,13.95,15.7,14.19,15.63,11.87,13.42,13.29,17.06,13.33,14.04,11.99,12.92,12.37,10.82,10.41,11.18,10.26,10.59,9.51,10.18,11.28,11.04,13.58,19.85,19.97,15.93,15.43,16.09,12.83,12.86,12.12,21.23,18.07,25.42,16.57,14.78,13.71,13.12,18.71,15.08,16.12,18.98,16.24,13.22,12.62,13.78,18.84,40.11,53.54,34.15,27.51,30.43,24.46,26.41,26.37,38.02,20.57,22.75,33.09,27.95,19.4,18.61,16.76,15.83,18.24,16.48,23.14,16.26,27.19,17.22,24.83,30.15,20.56,33.4,26.19,28.71,21.33,25.87,31.62,25.88,20.58,21.67,19.4,20.7,18.7,15.78,17.94,13.59,13.63,13.57,17.52,18.14,12.92,12.45,14.35,13.4,13.01,15.65,12.92,12.44,16.36,15.0,16.73,23.16,13.51,17.35,16.43,19.63,22.28,24.7,18.57,16.73,16.72,15.36,16.28,25.31],"histCats":["−0.15%","−0.14%","−0.13%","−0.12%","−0.11%","−0.10%","−0.09%","−0.08%","−0.07%","−0.06%","−0.05%","−0.04%","−0.03%","−0.02%","−0.01%","0.00%","+0.01%","+0.02%","+0.03%","+0.04%","+0.05%","+0.06%","+0.07%","+0.08%","+0.09%","+0.10%","+0.11%","+0.12%","+0.13%","+0.14%","+0.15%","+0.16%","+0.17%","+0.18%","+0.19%","+0.20%","+0.21%","+0.22%","+0.23%","+0.24%"],"histUp":[4,3,13,13,46,111,178,304,528,859,1350,2028,2751,3837,5098,6112,7289,8160,8610,8802,8394,7926,6830,5773,4573,3449,2521,1724,1129,708,395,230,130,66,30,18,4,2,2,0],"histDown":[2,2,13,25,44,79,146,285,484,798,1293,1865,2813,3775,4982,6137,7257,8091,8727,8980,8555,8100,6989,5808,4536,3355,2502,1680,1140,664,404,238,113,52,40,19,4,0,2,1]};
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+/* ---------- icons ---------- */
+const IC = {
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  nodes:'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.5 8l3.3 7.6M16.5 8l-3.3 7.6M8.5 6h7"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>',
+  flag:'<path d="M5 21V4"/><path d="M5 4h12l-2.5 4 2.5 4H5"/>',
+  question:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 015 .8c0 1.9-2.5 2.2-2.5 4"/><path d="M12 17.2v.1"/>',
+  cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  arrows:'<path d="M4 8h14l-4-4M20 16H6l4 4"/>',
+  trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  zap:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  db:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  layers:'<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>',
+  calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h1M12 12h1M16 12h0M8 16h1M12 16h1M16 16h0"/>',
+  present:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M7 12l3-3 2 2 4-4"/>',
+  scale:'<path d="M12 3v18M7 21h10M4 7h16"/><path d="M4 7l-2.5 6a2.5 2.5 0 005 0zM20 7l-2.5 6a2.5 2.5 0 005 0z"/>',
+  file:'<path d="M14 3H6a1 1 0 00-1 1v16a1 1 0 001 1h12a1 1 0 001-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 17h5"/>',
+  grid:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>',
+  cpu:'<rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/>',
+  box:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  alert:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.1"/>',
+  hour:'<path d="M6 3h12M6 21h12M7 3c0 6 10 6 10 9s-10 3-10 9M17 3c0 6-10 6-10 9s10 3 10 9"/>'
+};
+const svgIc = k => `<svg class="ic" viewBox="0 0 24 24">${IC[k]||''}</svg>`;
+$$('[data-ic]').forEach(e => e.innerHTML = svgIc(e.dataset.ic));
+$$('[data-ic2]').forEach(e => { e.setAttribute('viewBox','0 0 24 24'); e.innerHTML = IC[e.dataset.ic2]; });
+
+/* ---------- ticker ---------- */
+const tapeItems = [
+  ['<b class="coral">S&amp;P ▲ VIX ▲</b>','Both UP · signal 1'],
+  ['<b class="teal">S&amp;P ▼ VIX ▼</b>','Both DOWN · signal 0'],
+  ['<b style="color:#cfd5e3">S&amp;P ▲ VIX ▼</b>','Normal · signal −1'],
+  ['<b class="gold">7,397</b>','daily moves analysed'],
+  ['<b class="coral">652</b>','Both UP days'],
+  ['<b class="teal">667</b>','Both DOWN days'],
+  ['<b class="gold">100,000</b>','random sets tested'],
+  ['<b class="coral">56 / 100,000</b>','as bad as Both UP'],
+  ['<b class="teal">VIX 82.69</b>','peak · Mar 16, 2020']
+];
+const tapeHTML = tapeItems.map(t => `<span>${t[0]} &nbsp;${t[1]}</span>`).join('');
+$('#tape').innerHTML = tapeHTML + tapeHTML;
+
+/* ---------- chart helpers ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+function sizeOf(svg){ const p = svg.parentElement; return [p.clientWidth || 600, p.clientHeight || 300]; }
+
+function areaChart(svg, vals, color, o){
+  const [W, H] = sizeOf(svg); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const l = 56, r = 10, t = 10, b = 30, n = vals.length;
+  const x = i => l + i * (W - l - r) / (n - 1), y = v => t + (o.max - v) / (o.max - o.min) * (H - t - b);
+  let g = '';
+  for (let v = o.min; v <= o.max + 1e-9; v += o.step) g += `<line class="gl" x1="${l}" x2="${W - r}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${l - 10}" y="${y(v) + 4}" text-anchor="end">${o.fmt(v)}</text>`;
+  for (let yr = 1998; yr <= 2024; yr += 4){ const i = (yr - 1996) * 12 - 4; g += `<text class="ax" x="${x(i)}" y="${H - 6}" text-anchor="middle">${yr}</text>`; }
+  const pts = vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+  const id = 'g' + svg.id;
+  let peaks = '';
+  (o.peaks || []).forEach(p => { const px = x(p.i), py = y(vals[p.i]); peaks += `<circle cx="${px}" cy="${py}" r="6" fill="${color}" class="peak"/><circle cx="${px}" cy="${py}" r="5" fill="${color}" class="pt" style="--d:1.6s"/><text x="${px + (p.dx||0)}" y="${py - 14}" text-anchor="middle" class="pt" style="--d:1.7s;font:700 14px Inter;fill:${color}">${p.label}</text>`; });
+  svg.innerHTML = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".45"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>${g}
+    <path class="ar-fill" style="--d:.9s" fill="url(#${id})" d="M${l},${H - b} L${pts.join(' L')} L${W - r},${H - b}Z"/>
+    <path class="ln" pathLength="1" style="--d:.5s;--dur:1.8s;stroke-width:2.5" stroke="${color}" d="M${pts.join(' L')}"/>${peaks}`;
+}
+
+function lineChart(svg, series, o){
+  const [W, H] = sizeOf(svg); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const l = 58, r = 18, t = 12, b = 34;
+  const x = i => l + 20 + i * (W - l - r - 40) / 4, y = v => t + (o.max - v) / (o.max - o.min) * (H - t - b);
+  let g = '';
+  for (let v = o.min; v <= o.max + 1e-9; v += o.step){ const z = Math.abs(v) < 1e-9 && o.min < 0; g += `<line class="gl" x1="${l}" x2="${W - r}" y1="${y(v)}" y2="${y(v)}" ${z ? 'style="stroke:rgba(255,255,255,.3)"' : ''}/><text class="ax" x="${l - 10}" y="${y(v) + 4}" text-anchor="end">${o.fmt(v)}</text>`; }
+  for (let i = 0; i < 5; i++) g += `<text class="ax" x="${x(i)}" y="${H - 8}" text-anchor="middle">${i + 1} day${i ? 's' : ''}</text>`;
+  let s = '';
+  series.forEach((se, si) => {
+    const d0 = .4 + si * .35;
+    s += `<path class="ln" pathLength="1" style="--d:${d0}s;stroke-width:${se.w || 3.5}" stroke="${se.c}" d="M${se.v.map((v, i) => `${x(i)},${y(v)}`).join(' L')}"/>`;
+    se.v.forEach((v, i) => { s += `<circle class="pt" style="--d:${d0 + .2 + i * .2}s" cx="${x(i)}" cy="${y(v)}" r="${se.w ? 4 : 6}" fill="${se.c}" stroke="#131826" stroke-width="2"><title>${se.n} · ${i + 1} day${i ? 's' : ''}: ${o.fmt2(v)}</title></circle>`; });
+  });
+  svg.innerHTML = g + s;
+}
+
+function hist(svg, vals, hi, color, side){
+  const [W, H] = sizeOf(svg); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const l = 6, r = 6, t = 34, b = 26, n = vals.length, bw = (W - l - r) / n, mx = Math.max(...vals);
+  let s = '';
+  vals.forEach((v, i) => {
+    const h = v / mx * (H - t - b), tail = side < 0 ? i <= hi : i >= hi;
+    s += `<rect class="bar" style="--d:${.4 + i * .025}s" x="${l + i * bw + 1}" y="${H - b - h}" width="${bw - 2}" height="${Math.max(h, 0)}" rx="2" fill="${tail ? color : 'rgba(152,162,184,.45)'}"/>`;
+  });
+  D.histCats.forEach((c, i) => { if (i % 5 === 0) s += `<text class="ax" x="${l + i * bw + bw / 2}" y="${H - 6}" text-anchor="middle">${c}</text>`; });
+  const mxp = l + hi * bw + bw / 2;
+  s += `<line class="pt" style="--d:1.5s" x1="${mxp}" x2="${mxp}" y1="${t - 10}" y2="${H - b}" stroke="${color}" stroke-width="3"/><text class="pt" style="--d:1.6s;font:700 15px Inter;fill:${color}" x="${mxp + (side < 0 ? 8 : 8)}" y="${t - 14}">Our days: ${D.histCats[hi]}</text>`;
+  svg.innerHTML = s;
+}
+
+/* ---------- results slides ---------- */
+const ORD_P = [0.04, 0.08, 0.11, 0.15, 0.19], ORD_W = [53.57, 55.92, 56.84, 57.32, 57.71];
+const R = [
+  { t:'Results: 1 day in a row', lab:'1 day', up:[-0.11,-0.1,-0.15,-0.09,-0.05], dn:[0.08,0.1,0.13,0.24,0.23], wu:[46.32,47.85,50.61,53.22,52.61], wd:[56.82,58.02,57.42,58.92,58.62],
+    pr:{min:-0.2,max:0.3,step:0.1}, wr:{min:45,max:60,step:5},
+    rows:[['Both UP','652','46.3%','50.6%','52.6%','−0.11%','−0.15%','−0.05%'],['Both DOWN','667','56.8%','57.4%','58.6%','+0.08%','+0.13%','+0.23%']],
+    take:'<b class="coral">Both UP:</b> the S&amp;P 500 rose the next day only 46% of the time (normally 54%) and stayed below normal for 5 days. <b class="teal">Both DOWN:</b> slightly better than normal.' },
+  { t:'Results: 2 days in a row', lab:'2 in a row', up:[-0.06,-0.2,-0.08,-0.18,-0.21], dn:[0.07,-0.09,0.27,0.34,0.34], wu:[44.87,53.85,57.69,52.56,56.41], wd:[54.55,50,53.03,59.09,54.55],
+    pr:{min:-0.3,max:0.4,step:0.1}, wr:{min:40,max:60,step:5},
+    rows:[['Both UP','78','44.9%','57.7%','56.4%','−0.06%','−0.08%','−0.21%'],['Both DOWN','66','54.5%','53.0%','54.5%','+0.07%','+0.27%','+0.34%']],
+    take:'<b class="coral">Both UP:</b> average profit below normal on all 5 days (78 cases). <b class="teal">Both DOWN:</b> higher average profit on 4 of 5 days, but it wins less often than normal on 3 of 5 (66 cases).' },
+  { t:'Results: 3 days in a row', lab:'3 in a row', up:[-0.42,-0.4,-0.47,-1,-0.86], dn:[-0.45,0.28,0.83,0.8,1.07], wu:[25,37.5,37.5,12.5,37.5], wd:[33.33,33.33,66.67,66.67,83.33],
+    pr:{min:-1.2,max:1.2,step:0.4}, wr:{min:0,max:100,step:20}, warn:true,
+    rows:[['Both UP','8','25.0%','37.5%','37.5%','−0.42%','−0.47%','−0.86%'],['Both DOWN','6','33.3%','66.7%','83.3%','−0.45%','+0.83%','+1.07%']],
+    take:'Too few cases to trust: we need at least 20. Chance alone predicts about 7 cases, so this rarity is expected.' }
+];
+const sgn = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%';
+const fmtP = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(Math.abs(v) >= 1 || v === 0 ? 1 : 1);
+$$('.slide[data-r]').forEach(sl => {
+  const k = +sl.dataset.r, r = R[k];
+  const td = (v, cls) => `<td class="num ${cls || ''}">${v}</td>`;
+  const row = (rw, c) => `<tr><td style="color:${c};font-weight:700">${rw[0]}</td>${td(rw[1])}${rw.slice(2).map(v => td(v, 'p')).join('')}</tr>`;
+  sl.innerHTML = `<div class="stage">
+    <div class="chip a" style="--c:var(--gold)"><i></i>Part 3 · The results</div>
+    ${r.warn ? `<div class="warn pop" style="--d:.6s">${svgIc('alert')} Only 8 and 6 cases</div>` : ''}
+    <h2 class="a" style="--d:.1s;margin-bottom:22px">${r.t}</h2>
+    <div class="rgrid">
+      <div class="card a" style="--d:.2s"><h4 style="font:600 17px Inter;color:#cfd5e3">Average S&amp;P 500 profit per trade (%)</h4><div class="fig"><svg id="rp${k}"></svg></div></div>
+      <div class="card a" style="--d:.3s"><h4 style="font:600 17px Inter;color:#cfd5e3">Share of winning trades (%)</h4><div class="fig"><svg id="rw${k}"></svg></div></div>
+    </div>
+    <div class="legend a" style="--d:.4s"><span style="--c:var(--coral)">Both UP, ${r.lab}</span><span style="--c:var(--teal)">Both DOWN, ${r.lab}</span><span style="--c:var(--slate)">Ordinary day</span></div>
+    <div class="rbottom">
+      <div class="card a" style="--d:.5s;padding:12px 18px">
+        <table class="t"><thead><tr><th></th><th></th><th colspan="3" style="text-align:center">% winners after…</th><th colspan="3" style="text-align:center">Average profit after…</th></tr>
+        <tr><th>Pattern</th><th>Cases</th><th>1 day</th><th>3 days</th><th>5 days</th><th>1 day</th><th>3 days</th><th>5 days</th></tr></thead>
+        <tbody>${row(r.rows[0], 'var(--coral)')}${row(r.rows[1], 'var(--teal)')}<tr style="color:var(--mute)"><td>Ordinary day</td>${td('7,396')}${['53.6%','56.8%','57.7%','+0.04%','+0.11%','+0.19%'].map(v => td(v)).join('')}</tr></tbody></table>
+      </div>
+      <div class="card take ar" style="--d:.7s"><small>${svgIc('flag').replace('class="ic"','class="ic" style="width:18px;height:18px"')} KEY TAKEAWAY</small><p>${r.take}</p></div>
+    </div></div>`;
+});
+
+/* ---------- heatmap ---------- */
+const HM = [
+  ['Both UP · 1 day','652',['−0.11%','−0.15%','−0.05%','46.3%','50.6%','52.6%'],[-2,-3,-2,-2,-2,-2],'var(--coral)'],
+  ['Both UP · 2 in a row','78',['−0.06%','−0.08%','−0.21%','44.9%','57.7%','56.4%'],[-2,-2,-3,-3,0,-1],'var(--coral)'],
+  ['Both UP · 3 in a row','8 *',['−0.42%','−0.47%','−0.86%','25.0%','37.5%','37.5%'],[-3,-3,-3,-3,-3,-3],'var(--coral)'],
+  ['Both DOWN · 1 day','667',['+0.08%','+0.13%','+0.23%','56.8%','57.4%','58.6%'],[1,0,1,2,0,0],'var(--teal)'],
+  ['Both DOWN · 2 in a row','66',['+0.07%','+0.27%','+0.34%','54.5%','53.0%','54.5%'],[1,2,2,0,-2,-2],'var(--teal)'],
+  ['Both DOWN · 3 in a row','6 *',['−0.45%','+0.83%','+1.07%','33.3%','66.7%','83.3%'],[-3,3,3,-3,3,3],'var(--teal)']
+];
+$('#heat').innerHTML = `<thead><tr><th></th><th></th><th colspan="3" style="text-align:center">Average profit after…</th><th colspan="3" style="text-align:center">% winners after…</th></tr>
+<tr><th>Pattern</th><th>Cases</th><th>1 day</th><th>3 days</th><th>5 days</th><th>1 day</th><th>3 days</th><th>5 days</th></tr></thead><tbody>` +
+  HM.map((r, ri) => `<tr><td style="color:${r[4]};font-weight:700">${r[0]}</td><td class="num">${r[1]}</td>${r[2].map((v, ci) => `<td class="num h L${r[3][ci]}" style="--d:${.4 + (ri + ci) * .07}s">${v}</td>`).join('')}</tr>`).join('') +
+  `<tr><td>Ordinary day</td><td class="num">7,396</td>${['+0.04%','+0.11%','+0.19%','53.6%','56.8%','57.7%'].map(v => `<td class="num">${v}</td>`).join('')}</tr></tbody>`;
+
+/* ---------- streak strip ---------- */
+const SIG = [-1,1,1,-1,0,0,0,-1,1,-1], STK = ['–',1,2,'–',1,2,3,'–',1,'–'];
+const colr = s => s === 1 ? 'var(--coral)' : s === 0 ? 'var(--teal)' : '';
+let st = '<div class="lab">Signal</div>' + SIG.map((s, i) => `<div class="cell pop ${s < 0 ? 'n' : ''}" style="--c:${colr(s)};--d:${.4 + i * .12}s">${s < 0 ? '−1' : s}</div>`).join('');
+st += '<div class="lab">Streak</div>' + STK.map((s, i) => `<div class="sk a" style="--d:${.6 + i * .12}s;color:${SIG[i] < 0 ? 'var(--dim)' : colr(SIG[i])}">${s}</div>`).join('');
+st += `<div class="brk a" style="--c:var(--coral);grid-column:3/5;--d:1.9s"><span>2 in a row</span></div><div class="brk a" style="--c:var(--teal);grid-column:6/9;--d:2.1s"><span>3 in a row</span></div>`;
+$('#strip').innerHTML = st;
+
+/* ---------- donut ---------- */
+const DN = [[5870,'var(--slate)'],[740,'var(--coral)'],[740,'var(--teal)'],[47,'var(--gold)']], TOT = 7397;
+let acc = 0;
+$('#donut').innerHTML = DN.map(([v, c]) => { const p = v / TOT * 100, off = -acc; acc += p; return `<circle cx="180" cy="180" r="150" pathLength="100" stroke="${c}" data-p="${p.toFixed(3)}" stroke-dasharray="0 100" stroke-dashoffset="${off}" transform="rotate(-90 180 180)"/>`; }).join('');
+function playDonut(on){ $$('#donut circle').forEach((c, i) => { if (on) setTimeout(() => c.setAttribute('stroke-dasharray', `${Math.max(+c.dataset.p - .4, .3)} 100`), 300 + i * 250); else c.setAttribute('stroke-dasharray', '0 100'); }); }
+
+/* ---------- draw all charts ---------- */
+function drawAll(){
+  const covS = $('#covChart'), n = D.spx.length, mx = 7000;
+  const pts = D.spx.map((v, i) => `${(i * 1600 / (n - 1)).toFixed(1)},${(390 - v / mx * 330).toFixed(1)}`);
+  covS.innerHTML = `<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fd1bc" stop-opacity=".35"/><stop offset="1" stop-color="#2fd1bc" stop-opacity="0"/></linearGradient></defs>
+    <path class="ar-fill" style="--d:1.2s" fill="url(#cg)" d="M0,400 L${pts.join(' L')} L1600,400Z"/>
+    <path class="ln" pathLength="1" style="--d:.4s;--dur:3s;stroke-width:3" stroke="#2fd1bc" d="M${pts.join(' L')}" vector-effect="non-scaling-stroke"/>`;
+  areaChart($('#spxChart'), D.spx, '#2fd1bc', {min:0, max:7000, step:1000, fmt:v => v ? (v / 1000) + 'k' : '0'});
+  areaChart($('#vixChart'), D.vix, '#ff6f61', {min:0, max:70, step:10, fmt:v => v, peaks:[{i:150, label:'Nov 2008'}, {i:286, label:'Mar 2020'}]});
+  R.forEach((r, k) => {
+    lineChart($('#rp' + k), [{n:'Ordinary day', c:'#8a93a8', v:ORD_P, w:2.5}, {n:'Both UP', c:'#ff6f61', v:r.up}, {n:'Both DOWN', c:'#2fd1bc', v:r.dn}], {...r.pr, fmt:v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1), fmt2:sgn});
+    lineChart($('#rw' + k), [{n:'Ordinary day', c:'#8a93a8', v:ORD_W, w:2.5}, {n:'Both UP', c:'#ff6f61', v:r.wu}, {n:'Both DOWN', c:'#2fd1bc', v:r.wd}], {...r.wr, fmt:v => v.toFixed(0), fmt2:v => v.toFixed(1) + '%'});
+  });
+  hist($('#histUp'), D.histUp, 4, '#ff6f61', -1);
+  hist($('#histDown'), D.histDown, 23, '#2fd1bc', 1);
+}
+
+/* ---------- count-ups ---------- */
+function countUp(el){
+  const to = +el.dataset.count, from = +(el.dataset.from || 0), dec = +(el.dataset.dec || 0), t0 = performance.now(), dur = 1500;
+  const f = v => v.toLocaleString('en-US', {minimumFractionDigits:dec, maximumFractionDigits:dec});
+  el.textContent = f(from);
+  const step = now => { const p = Math.min((now - t0) / dur, 1), e = 1 - Math.pow(1 - p, 3); el.textContent = f(from + (to - from) * e); if (p < 1) requestAnimationFrame(step); };
+  setTimeout(() => requestAnimationFrame(step), 350);
+}
+
+/* ---------- speaker notes ---------- */
+const NOTES = [
+"Hello everyone. We are Group C, and our project is the S&P 500 and VIX pattern analysis. The S&P 500 follows 500 of the largest US companies. The VIX is known as the fear gauge, because it measures how much volatility investors expect. On most days these two move in opposite directions. We studied the rare days when they move together, and asked what the S&P 500 does next. The line at the bottom is the S&P 500 over the whole period we studied.",
+"Our group has five members: Jonathon Master, James Choo, Jeetendra Pathek, Robin Sarker and Thet Paing Hein.",
+"We will go through four parts. First, the problem we investigated. Second, our method, explained with flowcharts. Third, the results for one, two and three days in a row, compared with an ordinary day. And finally, our conclusion.",
+"Normally, when stocks go up, fear goes down, and when stocks fall, fear rises. In our data, 79.4% of days followed that opposite pattern. But on 10.0% of days both went up, and on another 10.0% both went down. We gave every day a signal: 1 when both go up, 0 when both go down, and minus 1 for everything else. Our question is: after these unusual days, does the S&P 500 do better or worse than usual over the next one to five trading days?",
+"Our data covers 7,398 trading days, from May 1996 to October 2025. Over that time the S&P 500 grew from 678 to 6,629, almost ten times higher. The VIX spiked hardest in November 2008 and March 2020, exactly when the S&P 500 fell the most — the normal opposite relationship.",
+"Here is our approach in six steps. We start with the daily data, find the days when both indexes move the same way, and group them by streak: the first day, the second day in a row, and the third day in a row. For each group we measure what the S&P 500 did one to five days later, count winners and losers, and compute the average profit. Then we turn the numbers into tables and graphs. Every result is compared with an ordinary day.",
+"This flowchart shows how the files are processed, without any code. The two CSV files go into our Java program, which produces one output file, results.csv, with 45 rows of statistics. We used those numbers to build the charts in this presentation. Inside the program there are eight steps: load the data into ArrayLists, check that the dates match, mark each day up or down, build the signal list, count the streak, measure the S&P 500 change, add the result to a statistics object stored in a Map, and finally compute the percentages and averages.",
+"This example shows how we count streaks. The first day of a signal is streak 1, the next day with the same signal is streak 2, and so on. A normal day resets the count. For every signal day we measure the percentage change in the S&P 500 one to five trading days later. A positive change is a winner, anything else is a loser. Each group has its own statistics object, which records the number of trades, winners, losers and the total profit. At the end we divide to get the percentage of winners and the average profit.",
+"These are the results for a single signal day, our largest groups with 652 Both UP days and 667 Both DOWN days. The coral Both UP line is below the gray ordinary-day line on every day. After a Both UP day, the S&P 500 rose the next day only 46.3% of the time, compared with 53.6% on an ordinary day, and the average was −0.11% instead of +0.04%. The teal Both DOWN line is slightly above normal on all five days, for example 56.8% winners the next day.",
+"Here are two days in a row, with 78 Both UP cases and 66 Both DOWN cases. Both UP is still below normal: its average profit is negative on all five days, for example −0.21% after five days compared with +0.19% normally. Both DOWN shows a higher average profit on most days, +0.34% after five days, but it actually wins less often than an ordinary day on three of the five days, so the picture is mixed.",
+"Three days in a row is very rare: only 8 Both UP cases and 6 Both DOWN cases in 29 years. That is why these lines jump around so much, for example 83.3% winners after five days for Both DOWN. Our rule is that we need at least 20 cases to trust a result, so we do not draw conclusions here. If days were independent, chance alone would predict about 7 cases, so finding so few is exactly what we should expect.",
+"This table puts every result side by side. Each cell is colored by comparing it with an ordinary day at the same horizon: teal means better than normal, coral means worse, and gray means about the same. The Both UP rows are coral almost everywhere, for both average profit and win rate. The Both DOWN single-day row is teal or gray. The three-in-a-row rows have very strong colors, but they are based on only 8 and 6 cases, so we do not trust them.",
+"To check whether our results could just be luck, we picked 100,000 random sets of days of the same size and computed each set's average next-day change. The gray bars show those random results. For Both UP, only 56 of the 100,000 random sets did as badly as our signal days, so this is almost certainly not luck. It also holds three and five days later. For Both DOWN, 14,793 random sets, about 15 percent, did as well, so that result could easily be luck.",
+"To conclude. First, Both UP is a real warning sign: when stocks and fear rise together, the S&P 500 does worse than normal for the next one to five days, and random days almost never do this badly. Second, Both DOWN is only mildly positive, and random days do as well about 15 percent of the time, so it could be luck. Third, streaks of three days are too rare to judge. Finally, the differences are small, a few tenths of a percent, so this is useful as a risk warning rather than a trading strategy. Thank you, we are happy to take your questions."
+];
+
+/* ---------- deck navigation ---------- */
+const deck = $('#deck'), slides = $$('.slide'), N = slides.length;
+let cur = -1;
+function fit(){ const k = Math.min(innerWidth / 1600, innerHeight / 900); document.documentElement.style.setProperty('--k', k); }
+fit();
+$('#dots').innerHTML = slides.map((_, i) => `<button aria-label="Go to slide ${i + 1}"></button>`).join('');
+const dots = $$('#dots button');
+function activate(i){
+  if (i === cur) return;
+  if (cur >= 0){ slides[cur].classList.remove('on'); if (cur === 3) playDonut(false); }
+  cur = i; const s = slides[i];
+  void s.offsetWidth; s.classList.add('on');
+  $$('[data-count]', s).forEach(countUp);
+  if (i === 3) playDonut(true);
+  dots.forEach((d, j) => d.classList.toggle('cur', j === i));
+  $('#count').textContent = `${i + 1} / ${N}`;
+  $('#progress').style.width = ((i + 1) / N * 100) + '%';
+  $('#prev').disabled = i === 0; $('#next').disabled = i === N - 1;
+  $('#notesText').textContent = NOTES[i] || '';
+  try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+}
+function go(i){ i = Math.max(0, Math.min(N - 1, i)); deck.scrollTo({left: i * deck.clientWidth, behavior: 'smooth'}); }
+let raf;
+deck.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { const i = Math.round(deck.scrollLeft / deck.clientWidth); if (Math.abs(deck.scrollLeft - i * deck.clientWidth) < deck.clientWidth * .25) activate(i); }); }, {passive:true});
+$('#prev').onclick = () => go(cur - 1);
+$('#next').onclick = () => go(cur + 1);
+dots.forEach((d, i) => d.onclick = () => go(i));
+const toggleNotes = () => $('#notes').classList.toggle('open');
+const toggleFS = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}); } catch (e) {} };
+$('#notesBtn').onclick = toggleNotes; $('#fsBtn').onclick = toggleFS;
+addEventListener('keydown', e => {
+  if (['ArrowRight','PageDown',' ','Enter'].includes(e.key)){ e.preventDefault(); go(cur + 1); }
+  else if (['ArrowLeft','PageUp','Backspace'].includes(e.key)){ e.preventDefault(); go(cur - 1); }
+  else if (e.key === 'Home') go(0); else if (e.key === 'End') go(N - 1);
+  else if (e.key === 'n' || e.key === 'N') toggleNotes();
+  else if (e.key === 'f' || e.key === 'F') toggleFS();
+});
+addEventListener('resize', () => { fit(); drawAll(); deck.scrollTo({left: cur * deck.clientWidth}); });
+setTimeout(() => { $('#hint').style.opacity = 0; }, 5000);
+
+/* ---------- background particles ---------- */
+const cv = $('#bgfx'), cx = cv.getContext('2d'); let P = [];
+function rs(){ cv.width = innerWidth; cv.height = innerHeight; }
+rs(); addEventListener('resize', rs);
+const cols = ['255,111,97','47,209,188','255,176,32'];
+for (let i = 0; i < 70; i++) P.push({x:Math.random() * innerWidth, y:Math.random() * innerHeight, r:Math.random() * 1.6 + .4, v:Math.random() * .35 + .08, c:cols[i % 3], a:Math.random() * .4 + .1, up:i % 2});
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+(function loop(){ cx.clearRect(0, 0, cv.width, cv.height); P.forEach(p => { p.y += p.up ? -p.v : p.v; if (p.y < -5) p.y = cv.height + 5; if (p.y > cv.height + 5) p.y = -5; cx.globalAlpha = p.a; cx.fillStyle = `rgb(${p.c})`; cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 7); cx.fill(); }); if (!reduce) requestAnimationFrame(loop); })();
+
+/* ---------- start ---------- */
+drawAll();
+const start = Math.max(0, Math.min(N - 1, (parseInt((location.hash.match(/^#s(\d+)$/) || [])[1]) || 1) - 1));
+if (start) deck.scrollTo({left: start * deck.clientWidth});
+requestAnimationFrame(() => activate(start));
+}
+</script>
+</body>
+</html>
